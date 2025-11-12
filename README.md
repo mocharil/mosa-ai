@@ -2,7 +2,7 @@
 
 Aplikasi asisten suara dwibahasa (Indonesia-Inggris) untuk peserta JKN yang memberikan jawaban cepat tentang layanan kesehatan dan dukungan kesehatan mental.
 
-## 🌟 Fitur Utama
+## 🌟 Fitur Utama 
 
 ### Mode Konsultasi JKN
 - ✅ Jawaban pertanyaan tentang prosedur klaim, cakupan layanan, cara daftar, syarat rujukan

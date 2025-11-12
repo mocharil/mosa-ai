@@ -1,34 +1,15 @@
-import { VertexAI } from "@google-cloud/vertexai";
-import * as fs from "fs";
-import * as path from "path";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Initialize Vertex AI with service account
-let vertexAI: VertexAI;
+// Initialize Gemini AI with API key from environment
+const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 
-try {
-  // Load service account credentials
-  const serviceAccountPath = path.join(process.cwd(), "skilled-compass.json");
-
-  if (!fs.existsSync(serviceAccountPath)) {
-    throw new Error("Service account file not found: skilled-compass.json");
-  }
-
-  const credentials = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
-
-  // Initialize Vertex AI
-  vertexAI = new VertexAI({
-    project: credentials.project_id,
-    location: "us-central1", // or your preferred location
-    googleAuthOptions: {
-      credentials: credentials,
-    },
-  });
-
-  console.log("✅ Vertex AI initialized successfully with service account");
-} catch (error) {
-  console.error("❌ Error initializing Vertex AI:", error);
-  throw error;
+if (!apiKey) {
+  console.warn("⚠️ GEMINI_API_KEY not found in environment variables");
 }
+
+const genAI = new GoogleGenerativeAI(apiKey);
+
+console.log("✅ Gemini AI initialized successfully");
 
 // Unified System Prompt
 export const SYSTEM_PROMPT = `Anda adalah asisten kesehatan yang membantu dengan DUA fungsi utama:
@@ -116,8 +97,8 @@ export async function getUnifiedResponse(
     );
 
     // Get generative model
-    const model = vertexAI.getGenerativeModel({
-      model: "gemini-2.5-flash-lite",
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp",
     });
 
     const historyText = conversationHistory
@@ -142,18 +123,9 @@ Pertanyaan/pesan pengguna: ${userQuery}
 Berikan respons yang sesuai dengan konteks (JKN atau curhat atau keduanya).`;
 
     // Generate content
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        maxOutputTokens: 1024,
-        temperature: 0.7,
-        topP: 0.8,
-        topK: 40,
-      },
-    });
-
+    const result = await model.generateContent(prompt);
     const response = result.response;
-    const responseText = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const responseText = response.text();
 
     // Detect topic type from response or query
     const isJKNTopic =
@@ -193,8 +165,8 @@ export async function analyzeImage(
 ): Promise<UnifiedResponse> {
   try {
     // Get vision model
-    const model = vertexAI.getGenerativeModel({
-      model: "gemini-2.5-flash-lite", // Supports vision
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp", // Supports vision
     });
 
     const prompt = `${SYSTEM_PROMPT}
@@ -217,26 +189,9 @@ PENTING: Jika gambar berisi informasi medis atau kesehatan yang serius, sarankan
       },
     };
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: prompt },
-            imagePart,
-          ],
-        },
-      ],
-      generationConfig: {
-        maxOutputTokens: 1024,
-        temperature: 0.7,
-        topP: 0.8,
-        topK: 40,
-      },
-    });
-
+    const result = await model.generateContent([prompt, imagePart]);
     const response = result.response;
-    const responseText = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const responseText = response.text();
 
     // Basic risk detection from image analysis response
     const isHighRisk = /rujukan|emergency|segera|darurat|serius/i.test(responseText);
@@ -255,8 +210,8 @@ PENTING: Jika gambar berisi informasi medis atau kesehatan yang serius, sarankan
 
 export async function generateSummary(messages: Message[]): Promise<string> {
   try {
-    const model = vertexAI.getGenerativeModel({
-      model: "gemini-2.5-flash-lite",
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp",
     });
 
     const conversationText = messages
@@ -276,15 +231,8 @@ Ringkasan harus mencakup:
 
 Format dalam bullet points yang jelas dan ringkas.`;
 
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        maxOutputTokens: 512,
-        temperature: 0.5,
-      },
-    });
-
-    return result.response.candidates?.[0]?.content?.parts?.[0]?.text || "Ringkasan tidak dapat dibuat saat ini.";
+    const result = await model.generateContent(prompt);
+    return result.response.text();
   } catch (error) {
     console.error("Error generating summary:", error);
     return "Ringkasan tidak dapat dibuat saat ini.";

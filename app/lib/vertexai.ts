@@ -1,15 +1,60 @@
+import { VertexAI } from "@google-cloud/vertexai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Initialize Gemini AI with API key from environment
-const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+// Initialize Vertex AI with service account or API key
+let vertexAI: VertexAI | null = null;
+let genAI: GoogleGenerativeAI | null = null;
+let useVertexAI = false;
 
-if (!apiKey) {
-  console.warn("⚠️ GEMINI_API_KEY not found in environment variables");
+// Try to get credentials from GEMINI_CREDS (JSON format)
+const geminiCreds = process.env.GEMINI_CREDS || process.env.NEXT_PUBLIC_GEMINI_CREDS;
+
+if (geminiCreds) {
+  try {
+    const creds = JSON.parse(geminiCreds);
+
+    // Check if this is a service account JSON (has type, project_id, private_key)
+    if (creds.type === "service_account" && creds.project_id && creds.private_key) {
+      console.log("✅ Using Vertex AI with Service Account from GEMINI_CREDS");
+
+      // Initialize Vertex AI with service account
+      vertexAI = new VertexAI({
+        project: creds.project_id,
+        location: "us-central1", // Default location
+        googleAuthOptions: {
+          credentials: creds
+        }
+      });
+
+      useVertexAI = true;
+      console.log("✅ Vertex AI initialized with service account");
+
+    } else if (creds.api_key || creds.apiKey || creds.key) {
+      // This is an API key in JSON format
+      const apiKey = creds.api_key || creds.apiKey || creds.key;
+      console.log("✅ Using Generative AI with API key from GEMINI_CREDS JSON");
+      genAI = new GoogleGenerativeAI(apiKey);
+      console.log("✅ Generative AI initialized successfully");
+    } else {
+      console.error("❌ GEMINI_CREDS JSON missing required fields");
+      console.error("Expected: service account (type, project_id, private_key) OR api_key");
+    }
+  } catch (error) {
+    console.error("❌ Failed to parse GEMINI_CREDS JSON:", error);
+  }
 }
 
-const genAI = new GoogleGenerativeAI(apiKey);
-
-console.log("✅ Gemini AI initialized successfully");
+// Fallback to GEMINI_API_KEY if GEMINI_CREDS didn't work
+if (!vertexAI && !genAI) {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+  if (apiKey) {
+    console.log("✅ Using API key from GEMINI_API_KEY");
+    genAI = new GoogleGenerativeAI(apiKey);
+    console.log("✅ Generative AI initialized successfully");
+  } else {
+    console.warn("⚠️ No credentials found. Checked: GEMINI_CREDS (service account/API key), GEMINI_API_KEY");
+  }
+}
 
 // Unified System Prompt
 export const SYSTEM_PROMPT = `Anda adalah asisten kesehatan yang membantu dengan DUA fungsi utama:
@@ -96,11 +141,6 @@ export async function getUnifiedResponse(
       lowerMessage.includes(kw)
     );
 
-    // Get generative model
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
-    });
-
     const historyText = conversationHistory
       .slice(-6)
       .map((msg) => `${msg.role}: ${msg.content}`)
@@ -122,10 +162,39 @@ Pertanyaan/pesan pengguna: ${userQuery}
 
 Berikan respons yang sesuai dengan konteks (JKN atau curhat atau keduanya).`;
 
-    // Generate content
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const responseText = response.text();
+    let responseText = "";
+
+    // Use Vertex AI or Generative AI depending on initialization
+    if (useVertexAI && vertexAI) {
+      // Use Vertex AI with service account
+      const model = vertexAI.getGenerativeModel({
+        model: "gemini-2.0-flash-exp",
+      });
+
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 2048,
+          temperature: 0.7,
+        },
+      });
+
+      const response = result.response;
+      responseText = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    } else if (genAI) {
+      // Use Generative AI with API key
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash-exp",
+      });
+
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      responseText = response.text();
+
+    } else {
+      throw new Error("No AI client initialized");
+    }
 
     // Detect topic type from response or query
     const isJKNTopic =
@@ -164,11 +233,6 @@ export async function analyzeImage(
   userQuery: string = "Apa yang ada di gambar ini?"
 ): Promise<UnifiedResponse> {
   try {
-    // Get vision model
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp", // Supports vision
-    });
-
     const prompt = `${SYSTEM_PROMPT}
 
 Pengguna mengirim gambar dengan pertanyaan: ${userQuery}
@@ -181,17 +245,55 @@ Analisis gambar ini dan berikan respons yang sesuai:
 
 PENTING: Jika gambar berisi informasi medis atau kesehatan yang serius, sarankan untuk konsultasi dengan tenaga medis profesional.`;
 
-    // Prepare image part
-    const imagePart = {
-      inlineData: {
-        data: imageBase64.split(',')[1], // Remove data:image/jpeg;base64, prefix
-        mimeType: 'image/jpeg',
-      },
-    };
+    let responseText = "";
 
-    const result = await model.generateContent([prompt, imagePart]);
-    const response = result.response;
-    const responseText = response.text();
+    // Use Vertex AI or Generative AI depending on initialization
+    if (useVertexAI && vertexAI) {
+      // Use Vertex AI with service account
+      const model = vertexAI.getGenerativeModel({
+        model: "gemini-2.0-flash-exp",
+      });
+
+      // Prepare image part for Vertex AI
+      const imagePart = {
+        inlineData: {
+          data: imageBase64.split(',')[1],
+          mimeType: 'image/jpeg',
+        },
+      };
+
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }, imagePart] }],
+        generationConfig: {
+          maxOutputTokens: 2048,
+          temperature: 0.7,
+        },
+      });
+
+      const response = result.response;
+      responseText = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    } else if (genAI) {
+      // Use Generative AI with API key
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash-exp",
+      });
+
+      // Prepare image part for Generative AI
+      const imagePart = {
+        inlineData: {
+          data: imageBase64.split(',')[1],
+          mimeType: 'image/jpeg',
+        },
+      };
+
+      const result = await model.generateContent([prompt, imagePart]);
+      const response = result.response;
+      responseText = response.text();
+
+    } else {
+      throw new Error("No AI client initialized");
+    }
 
     // Basic risk detection from image analysis response
     const isHighRisk = /rujukan|emergency|segera|darurat|serius/i.test(responseText);
@@ -210,10 +312,6 @@ PENTING: Jika gambar berisi informasi medis atau kesehatan yang serius, sarankan
 
 export async function generateSummary(messages: Message[]): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
-    });
-
     const conversationText = messages
       .map((msg) => `${msg.role}: ${msg.content}`)
       .join("\n");
@@ -222,17 +320,55 @@ export async function generateSummary(messages: Message[]): Promise<string> {
 
 ${conversationText}
 
-Ringkasan harus mencakup:
-1. Topik utama yang dibahas (2-3 poin)
-2. Jika ada pertanyaan JKN: rangkum jawaban dan rekomendasi
-3. Jika ada curhat/emosi: rangkum dukungan yang diberikan
-4. Tindak lanjut yang perlu dilakukan (jika ada)
-5. Nomor hotline yang relevan (jika disebutkan)
+Format ringkasan menggunakan markdown dengan aturan berikut:
+- Gunakan * untuk bullet points (bukan - atau •)
+- Gunakan **text** untuk kata atau frasa yang perlu ditekankan (bold)
+- Setiap poin harus jelas dan ringkas
+- Maksimal 5 poin utama
 
-Format dalam bullet points yang jelas dan ringkas.`;
+Struktur ringkasan:
+* **Topik Utama**: [2-3 poin singkat tentang apa yang dibahas]
+* **Informasi JKN**: [jika ada pertanyaan JKN, rangkum jawaban dan rekomendasi]
+* **Dukungan Emosional**: [jika ada curhat/emosi, rangkum dukungan yang diberikan]
+* **Tindak Lanjut**: [langkah-langkah yang perlu dilakukan, jika ada]
+* **Kontak Penting**: [nomor hotline yang relevan, jika disebutkan]
 
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+Contoh format yang benar:
+* **Pertanyaan utama**: Cara mendaftar BPJS dan biaya iuran
+* **Jawaban diberikan**: Prosedur pendaftaran melalui kantor cabang atau online
+* **Tindak lanjut**: Siapkan KTP dan KK untuk pendaftaran
+
+PENTING: Gunakan format markdown yang rapi dan konsisten.`;
+
+    // Use Vertex AI or Generative AI depending on initialization
+    if (useVertexAI && vertexAI) {
+      // Use Vertex AI with service account
+      const model = vertexAI.getGenerativeModel({
+        model: "gemini-2.0-flash-exp",
+      });
+
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 1024,
+          temperature: 0.5,
+        },
+      });
+
+      return result.response.candidates?.[0]?.content?.parts?.[0]?.text || "Ringkasan tidak dapat dibuat saat ini.";
+
+    } else if (genAI) {
+      // Use Generative AI with API key
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash-exp",
+      });
+
+      const result = await model.generateContent(prompt);
+      return result.response.text();
+
+    } else {
+      throw new Error("No AI client initialized");
+    }
   } catch (error) {
     console.error("Error generating summary:", error);
     return "Ringkasan tidak dapat dibuat saat ini.";

@@ -160,13 +160,36 @@ const highRiskKeywords = [
 
 ### Deploy ke Vercel (Recommended)
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/voice-jkn-agent)
+
+**Panduan Lengkap**: Lihat [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) untuk panduan step-by-step.
+
+**Quick Start:**
 1. Push kode ke GitHub
-2. Import project di [Vercel](https://vercel.com)
-3. Tambahkan environment variables:
-   - `GEMINI_API_KEY`
+2. Import project di [Vercel](https://vercel.com/new)
+3. Tambahkan environment variable `GEMINI_API_KEY` di Vercel Settings
 4. Deploy!
 
-### Build untuk Production
+**Dapatkan API Key:**
+- Gemini API: https://aistudio.google.com/app/apikey
+
+### Deploy ke Docker
+
+**Panduan Lengkap**: Lihat [DEPLOYMENT.md](./DEPLOYMENT.md) untuk panduan Docker.
+
+**Quick Start:**
+\`\`\`bash
+# Build image
+docker build -t voice-jkn-agent:latest .
+
+# Run container
+docker run -p 3000:3000 -e GEMINI_API_KEY=your_key voice-jkn-agent:latest
+
+# Atau gunakan docker-compose
+docker-compose up -d
+\`\`\`
+
+### Build untuk Production (Manual)
 
 \`\`\`bash
 npm run build

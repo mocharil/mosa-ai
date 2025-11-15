@@ -16,25 +16,21 @@ import {
 import { speakWithAnimation } from "@/app/lib/speechSynthesisHandler";
 import AudioVisualizer from "@/app/components/voice/AudioVisualizer";
 import SpeakingIndicator from "@/app/components/voice/SpeakingIndicator";
-import TalkingAvatar from "@/app/components/TalkingAvatar";
-import EmotionIndicator from "@/app/components/EmotionIndicator";
-import EmotionHistory from "@/app/components/EmotionHistory";
+import VoiceSphere from "@/app/components/voice/VoiceSphere";
 import ChatContainer from "@/app/components/chat/ChatContainer";
 import ConversationSummary from "@/app/components/ConversationSummary";
-import EmergencyButton from "@/app/components/EmergencyButton";
 import VoiceEmotionAnalyzer from "@/app/lib/voiceEmotionAnalyzer";
 import UnifiedInput from "@/app/components/chat/UnifiedInput";
+import WelcomeScreen from "@/app/components/chat/WelcomeScreen";
+import Image from "next/image";
 import {
   ArrowLeft,
-  Volume2,
-  VolumeX,
-  FileText,
-  Trash2,
   AlertTriangle,
-  Sparkles,
-  User,
+  Menu,
 } from "lucide-react";
 import { cn } from "@/app/lib/utils";
+import SettingsMenu from "@/app/components/chat/SettingsMenu";
+import { getDemoResponse } from "@/app/lib/demoResponses";
 
 // Type definitions for emotion data
 interface EmotionResult {
@@ -72,7 +68,9 @@ export default function ChatPage() {
   const [showSummary, setShowSummary] = useState(false);
   const [summary, setSummary] = useState("");
   const [showRiskWarning, setShowRiskWarning] = useState(false);
-  const [showAvatar, setShowAvatar] = useState(true);
+  const [showMenu, setShowMenu] = useState(false);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [demoMode, setDemoMode] = useState(true); // Start with demo mode ON
   const [mouthOpenness, setMouthOpenness] = useState(0);
   const [currentAIText, setCurrentAIText] = useState("");
   const [currentEmotion, setCurrentEmotion] = useState<EmotionResult | null>(null);
@@ -86,29 +84,70 @@ export default function ChatPage() {
     browserSupportsSpeechRecognition,
   } = useSpeechRecognition();
 
+  // Fallback check for speech recognition support
+  const isSpeechSupported = browserSupportsSpeechRecognition ?? isSpeechRecognitionSupported();
+
+  // Initialize SpeechRecognition on mount
+  useEffect(() => {
+    // Check if SpeechRecognition API exists
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (SpeechRecognitionAPI) {
+      console.log('✅ SpeechRecognition API found:', SpeechRecognitionAPI);
+    } else {
+      console.error('❌ SpeechRecognition API not found in window');
+    }
+  }, []);
+
   // Check browser support
   useEffect(() => {
-    if (!isSpeechRecognitionSupported() || !browserSupportsSpeechRecognition) {
-      alert(
-        "Browser Anda tidak mendukung speech recognition. Gunakan Chrome atau Edge terbaru."
-      );
+    console.log('Speech Recognition Support Check:', {
+      isSpeechRecognitionSupported: isSpeechRecognitionSupported(),
+      browserSupportsSpeechRecognition: browserSupportsSpeechRecognition,
+      isSpeechSupported: isSpeechSupported,
+      windowSpeechRecognition: typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
+    });
+
+    if (!isSpeechSupported) {
+      console.error('Speech recognition not supported');
+      // Don't alert immediately, just log
+      console.warn('⚠️ Speech recognition not available. Button will be disabled.');
+    } else {
+      console.log('✅ Speech recognition is supported and ready');
     }
-  }, [browserSupportsSpeechRecognition]);
+  }, [browserSupportsSpeechRecognition, isSpeechSupported]);
 
   // Sync listening state
   useEffect(() => {
+    console.log('Listening state changed:', listening);
     setIsListening(listening);
   }, [listening, setIsListening]);
 
   // Update transcript
   useEffect(() => {
+    console.log('Transcript update effect:', {
+      liveTranscript: liveTranscript,
+      length: liveTranscript?.length || 0,
+      listening: listening
+    });
+
     if (liveTranscript) {
+      console.log('✅ Transcript updated:', liveTranscript);
       setTranscript(liveTranscript);
+    } else if (listening) {
+      console.log('⚠️ Listening but no transcript yet...');
     }
-  }, [liveTranscript, setTranscript]);
+  }, [liveTranscript, setTranscript, listening]);
 
   // Initialize emotion analyzer when listening starts
+  // DISABLED: Can conflict with SpeechRecognition microphone access
+  // TODO: Re-enable after fixing microphone access conflict
   useEffect(() => {
+    // Emotion analyzer disabled to prevent microphone conflict
+    console.log('Emotion analyzer is disabled to prevent microphone conflict');
+    return;
+
+    /* COMMENTED OUT - Uncomment after fixing
     const initEmotionAnalyzer = async () => {
       if (listening && !emotionAnalyzer) {
         try {
@@ -136,10 +175,16 @@ export default function ChatPage() {
     };
 
     initEmotionAnalyzer();
+    */
   }, [listening, emotionAnalyzer]);
 
   // Detect emotion periodically while listening
+  // DISABLED: Emotion analyzer is disabled
   useEffect(() => {
+    // Emotion detection disabled
+    return;
+
+    /* COMMENTED OUT - Uncomment after fixing
     if (!listening || !emotionAnalyzer) return;
 
     const intervalId = setInterval(() => {
@@ -163,6 +208,7 @@ export default function ChatPage() {
     }, 2000); // Check every 2 seconds
 
     return () => clearInterval(intervalId);
+    */
   }, [listening, emotionAnalyzer]);
 
   // Send message to API
@@ -179,42 +225,60 @@ export default function ChatPage() {
       addMessage(userMessage);
       setIsProcessing(true);
 
+      // Clear transcript after sending
+      resetTranscript();
+
       try {
-        const response = await fetch("/api/gemini", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "chat",
-            userQuery: text.trim(),
-            conversationHistory: messages,
-          }),
-        });
+        let responseText = "";
 
-        if (!response.ok) {
-          throw new Error("Failed to get response");
+        if (demoMode) {
+          // DEMO MODE: Use mock responses
+          const demoResponse = getDemoResponse(text.trim());
+          const delay = demoResponse?.delay || 1500;
+
+          // Simulate network delay
+          await new Promise(resolve => setTimeout(resolve, delay));
+
+          responseText = demoResponse?.response || "Maaf, saya belum bisa memahami pertanyaan Anda. Coba tanyakan tentang rumah sakit, iuran JKN, atau ceritakan keluhan Anda.";
+        } else {
+          // REAL MODE: Use Gemini AI
+          const response = await fetch("/api/gemini", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "chat",
+              userQuery: text.trim(),
+              conversationHistory: messages,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to get response");
+          }
+
+          const data = await response.json();
+          responseText = data.answer;
+
+          // Show risk warning if high risk detected
+          if (data.showEmergencyContacts) {
+            setShowRiskWarning(true);
+          }
         }
-
-        const data = await response.json();
 
         const assistantMessage = {
           role: "assistant" as const,
-          content: data.answer,
+          content: responseText,
           timestamp: new Date(),
         };
 
         addMessage(assistantMessage);
 
-        // Show risk warning if high risk detected
-        if (data.showEmergencyContacts) {
-          setShowRiskWarning(true);
-        }
-
         // Auto-speak response if enabled
         if (autoSpeak && isSpeechSynthesisSupported()) {
-          setCurrentAIText(data.answer);
+          setCurrentAIText(responseText);
           setIsSpeaking(true);
           try {
-            await speakWithAnimation(data.answer, {
+            await speakWithAnimation(responseText, {
               lang: language,
               rate: 0.9,
               pitch: 1.0,
@@ -260,9 +324,11 @@ export default function ChatPage() {
       addMessage,
       setIsProcessing,
       messages,
+      demoMode,
       autoSpeak,
       language,
       setIsSpeaking,
+      resetTranscript,
     ]
   );
 
@@ -272,13 +338,16 @@ export default function ChatPage() {
       if (isProcessing) return;
 
       // Add user message with image
+      const displayCaption = imageData.caption || "Gambar diunggah";
+
       const userMessage = {
         role: "user" as const,
-        content: imageData.caption,
+        content: displayCaption,
         timestamp: new Date(),
         imageUrl: imageData.previewUrl,
       };
 
+      console.log('Adding image message with caption:', displayCaption);
       addMessage(userMessage);
       setIsProcessing(true);
 
@@ -292,13 +361,20 @@ export default function ChatPage() {
           reader.onerror = reject;
         });
 
+        // Use custom caption if provided, otherwise use default prompt
+        const imageQuery = imageData.caption
+          ? imageData.caption
+          : "Apa yang ada di gambar ini? Jelaskan secara detail.";
+
+        console.log('Sending image with query:', imageQuery);
+
         const response = await fetch("/api/gemini", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "image",
             imageBase64: imageBase64,
-            userQuery: imageData.caption,
+            userQuery: imageQuery,
           }),
         });
 
@@ -385,37 +461,225 @@ export default function ChatPage() {
     setCurrentAIText('');
   }, [setIsSpeaking]);
 
-  // Handle voice input
-  const handleVoiceToggle = useCallback(() => {
-    if (listening) {
-      SpeechRecognition.stopListening();
-      if (transcript.trim()) {
-        handleSendMessage(transcript);
-        resetTranscript();
-        resetSpeechTranscript();
+  // Handle voice input - stays in voice mode
+  const handleVoiceSubmit = useCallback(async () => {
+    if (!transcript.trim()) return;
+
+    console.log('🎤 Submitting voice message:', transcript);
+
+    const userMessage = transcript.trim();
+
+    // Add user message
+    addMessage({
+      role: "user",
+      content: userMessage,
+      timestamp: new Date(),
+    });
+
+    // Clear transcript and restart listening
+    resetTranscript();
+    resetSpeechTranscript();
+    setIsProcessing(true);
+
+    try {
+      let responseText = "";
+
+      if (demoMode) {
+        // DEMO MODE: Use mock responses
+        const demoResponse = getDemoResponse(userMessage);
+        const delay = demoResponse?.delay || 1500;
+
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, delay));
+
+        responseText = demoResponse?.response || "Maaf, saya belum bisa memahami pertanyaan Anda. Coba tanyakan tentang rumah sakit, iuran JKN, atau ceritakan keluhan Anda.";
+      } else {
+        // REAL MODE: Use Gemini AI
+        const response = await fetch("/api/gemini", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "chat",
+            userQuery: userMessage,
+            conversationHistory: messages,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to get response");
+        }
+
+        const data = await response.json();
+        responseText = data.answer;
+
+        // Show risk warning if high risk detected
+        if (data.showEmergencyContacts) {
+          setShowRiskWarning(true);
+        }
       }
-    } else {
+
+      const assistantMessage = {
+        role: "assistant" as const,
+        content: responseText,
+        timestamp: new Date(),
+      };
+
+      addMessage(assistantMessage);
+
+      // Auto-speak response (always in voice mode)
+      if (isSpeechSynthesisSupported()) {
+        setCurrentAIText(responseText);
+        setIsSpeaking(true);
+        try {
+          await speakWithAnimation(responseText, {
+            lang: language,
+            rate: 0.9,
+            pitch: 1.0,
+            onMouthMove: (openness: number) => {
+              setMouthOpenness(openness);
+            },
+            onStart: () => {
+              console.log('Avatar started speaking');
+            },
+            onEnd: () => {
+              setIsSpeaking(false);
+              setMouthOpenness(0);
+              setTimeout(() => setCurrentAIText(''), 500);
+            },
+            onError: (error: any) => {
+              console.error("Speech error:", error);
+              setIsSpeaking(false);
+              setMouthOpenness(0);
+              setCurrentAIText('');
+            }
+          } as any);
+        } catch (error) {
+          console.error("Speech error:", error);
+          setIsSpeaking(false);
+          setMouthOpenness(0);
+          setCurrentAIText('');
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      addMessage({
+        role: "assistant",
+        content: "Maaf, terjadi kesalahan. Silakan coba lagi.",
+        timestamp: new Date(),
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [
+    transcript,
+    messages,
+    language,
+    demoMode,
+    addMessage,
+    setIsProcessing,
+    resetTranscript,
+    resetSpeechTranscript,
+    setIsSpeaking,
+  ]);
+
+  // Handle voice toggle - enter/exit voice mode
+  const handleVoiceToggle = useCallback(async () => {
+    console.log('🎤 Voice toggle clicked. Current state:', { listening, transcript, isVoiceMode });
+
+    if (listening) {
+      // Stop listening and stay in voice mode
+      console.log('🛑 Stopping voice recognition...');
+      SpeechRecognition.stopListening();
+
+      // Send the transcript if available
+      if (transcript.trim()) {
+        console.log('✅ Sending voice message:', transcript);
+        await handleVoiceSubmit();
+      }
+    } else if (!isVoiceMode) {
+      // Enter voice mode for first time
+      setIsVoiceMode(true);
+
       // Stop AI speaking if it's currently speaking
       if (isSpeaking) {
+        console.log('🔇 Stopping AI speech...');
         handleStopSpeaking();
       }
+
+      // Clear any existing transcript
       resetTranscript();
       resetSpeechTranscript();
-      SpeechRecognition.startListening({
-        continuous: true,
-        language: language,
-      });
+
+      // Check browser support first
+      if (!isSpeechSupported) {
+        console.error('❌ Browser does not support speech recognition');
+        alert('Browser Anda tidak mendukung speech recognition. Gunakan Chrome atau Edge terbaru.');
+        return;
+      }
+
+      // Start listening
+      console.log('🎤 Starting voice recognition with language:', language);
+
+      try {
+        await SpeechRecognition.startListening({
+          continuous: true,
+          language: language,
+        });
+        console.log('✅ Voice recognition started successfully');
+      } catch (err) {
+        console.error('❌ Failed to start voice recognition:', err);
+        alert('Gagal memulai voice recognition. Pastikan Anda memberikan izin mikrofon dan menggunakan HTTPS atau localhost.');
+      }
+    } else {
+      // Already in voice mode, restart listening
+      // Clear any existing transcript
+      resetTranscript();
+      resetSpeechTranscript();
+
+      // Start listening again
+      console.log('🎤 Restarting voice recognition with language:', language);
+
+      try {
+        await SpeechRecognition.startListening({
+          continuous: true,
+          language: language,
+        });
+        console.log('✅ Voice recognition restarted successfully');
+      } catch (err) {
+        console.error('❌ Failed to restart voice recognition:', err);
+        alert('Gagal memulai voice recognition. Pastikan Anda memberikan izin mikrofon dan menggunakan HTTPS atau localhost.');
+      }
     }
   }, [
     listening,
     transcript,
     language,
     isSpeaking,
+    isSpeechSupported,
+    isVoiceMode,
     resetTranscript,
     resetSpeechTranscript,
     handleStopSpeaking,
-    handleSendMessage,
+    handleVoiceSubmit,
   ]);
+
+  // Handle back from voice mode
+  const handleBackFromVoice = useCallback(() => {
+    // Exit voice mode
+    setIsVoiceMode(false);
+
+    // Stop listening
+    if (listening) {
+      SpeechRecognition.stopListening();
+    }
+    // Stop speaking
+    if (isSpeaking) {
+      handleStopSpeaking();
+    }
+    // Clear transcript
+    resetTranscript();
+    resetSpeechTranscript();
+  }, [listening, isSpeaking, resetTranscript, resetSpeechTranscript, handleStopSpeaking]);
 
   // Generate summary
   const handleGenerateSummary = async () => {
@@ -460,93 +724,71 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
+    <div className="flex flex-col h-screen bg-black">
+      {/* Minimalist Header */}
+      <header className="bg-gradient-to-r from-primary-600 to-primary-500 border-b border-primary-700/50 shadow-lg backdrop-blur-xl">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
+            {/* Left: Back button + Logo */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push("/")}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-white/10 rounded-xl transition-all active:scale-95"
+                aria-label="Back to home"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-5 w-5 text-white" />
               </button>
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-white" />
+              <div className="flex items-center gap-2.5">
+                <div className="h-10 w-10 rounded-xl bg-white/95 flex items-center justify-center shadow-lg p-1.5">
+                  <Image
+                    src="/mosa_logo-removebg-preview.png"
+                    alt="MOSA Logo"
+                    width={40}
+                    height={40}
+                    className="object-contain"
+                    priority
+                  />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold text-gray-900">
-                    Voice Assistant
+                  <h1 className="text-lg font-bold text-white tracking-tight">
+                    MOSA
                   </h1>
-                  <p className="text-xs text-gray-600">
-                    JKN Info & Dukungan Emosional
+                  <p className="text-[10px] text-primary-50/80 leading-tight">
+                    AI Assistant
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              {/* Avatar toggle */}
-              <button
-                onClick={() => setShowAvatar(!showAvatar)}
-                className={cn(
-                  "p-2 rounded-lg transition-colors",
-                  showAvatar
-                    ? "bg-accent-100 text-accent-600"
-                    : "hover:bg-gray-100 text-gray-600"
-                )}
-                title={showAvatar ? "Sembunyikan avatar" : "Tampilkan avatar"}
-              >
-                <User className="h-5 w-5" />
-              </button>
-
-              {/* Auto-speak toggle */}
-              <button
-                onClick={() => setAutoSpeak(!autoSpeak)}
-                className={cn(
-                  "p-2 rounded-lg transition-colors",
-                  autoSpeak
-                    ? "bg-primary-100 text-primary-600"
-                    : "hover:bg-gray-100 text-gray-600"
-                )}
-                title={
-                  autoSpeak
-                    ? "Matikan suara otomatis"
-                    : "Nyalakan suara otomatis"
-                }
-              >
-                {autoSpeak ? (
-                  <Volume2 className="h-5 w-5" />
-                ) : (
-                  <VolumeX className="h-5 w-5" />
-                )}
-              </button>
-
-              {/* Summary button */}
-              <button
-                onClick={handleGenerateSummary}
-                disabled={messages.length === 0 || isProcessing}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
-                title="Buat ringkasan"
-              >
-                <FileText className="h-5 w-5" />
-              </button>
-
-              {/* Clear chat button */}
-              <button
-                onClick={handleClearChat}
-                disabled={messages.length === 0}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
-                title="Hapus percakapan"
-              >
-                <Trash2 className="h-5 w-5" />
-              </button>
-            </div>
+            {/* Right: Hamburger menu */}
+            <button
+              onClick={() => setShowMenu(true)}
+              className="p-2.5 hover:bg-white/10 rounded-xl transition-all active:scale-95 relative group"
+              aria-label="Open menu"
+            >
+              <Menu className="h-6 w-6 text-white" />
+              {/* Notification dot if there are messages */}
+              {messages.length > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-accent-400 rounded-full ring-2 ring-primary-500 animate-pulse" />
+              )}
+            </button>
           </div>
         </div>
       </header>
+
+      {/* Settings Menu */}
+      <SettingsMenu
+        isOpen={showMenu}
+        onClose={() => setShowMenu(false)}
+        autoSpeak={autoSpeak}
+        demoMode={demoMode}
+        onToggleAutoSpeak={() => setAutoSpeak(!autoSpeak)}
+        onToggleDemoMode={() => setDemoMode(!demoMode)}
+        onGenerateSummary={handleGenerateSummary}
+        onClearChat={handleClearChat}
+        messagesCount={messages.length}
+        isProcessing={isProcessing}
+      />
 
       {/* Risk warning banner */}
       {showRiskWarning && (
@@ -575,64 +817,172 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Avatar Section */}
-      {showAvatar && (
-        <div className="bg-white/50 backdrop-blur-sm border-b border-gray-200">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-48 sm:w-56">
-                <TalkingAvatar
-                  isSpeaking={isSpeaking}
-                  transcript={currentAIText}
-                  mode="jkn"
-                  mouthOpenness={mouthOpenness}
-                />
-              </div>
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto flex flex-col">
+        {messages.length === 0 ? (
+          /* Welcome Screen - shown when no messages */
+          <WelcomeScreen
+            onSelectTopic={(question) => {
+              setTranscript(question);
+              handleSendMessage(question);
+            }}
+          />
+        ) : (
+          /* Chat area - full height */
+          <div className="flex-1 overflow-hidden">
+            <ChatContainer messages={messages} isProcessing={isProcessing} />
+          </div>
+        )}
+      </div>
 
-              {/* Emotion Indicator */}
-              {currentEmotion && currentEmotion.emotion !== 'neutral' && (
-                <EmotionIndicator
-                  emotion={currentEmotion.emotion}
-                  confidence={currentEmotion.confidence}
-                />
+      {/* Voice Mode Overlay - Modern Design */}
+      {isVoiceMode && (
+        <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-900 z-40 flex flex-col items-center justify-between p-8">
+          {/* Header */}
+          <div className="w-full max-w-md">
+            <div className="flex items-center justify-between mb-8">
+              <button
+                onClick={handleBackFromVoice}
+                className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-all active:scale-95"
+              >
+                <ArrowLeft className="w-5 h-5 text-white" />
+              </button>
+              <h2 className="text-white text-lg font-medium">Voice Assistant</h2>
+              <div className="w-11"></div>
+            </div>
+            <p className="text-white/60 text-center text-sm">
+              {isProcessing
+                ? "Processing..."
+                : isSpeaking
+                ? "AI is speaking..."
+                : listening
+                ? "Listening..."
+                : "Go ahead, I'm listening..."}
+            </p>
+          </div>
+
+          {/* Fluid Organic Shape */}
+          <div className="flex-1 flex items-center justify-center">
+            <VoiceSphere isActive={listening || isSpeaking} mouthOpenness={mouthOpenness} />
+          </div>
+
+          {/* Content Display */}
+          <div className="w-full max-w-md mb-8">
+            {/* User Transcript - only show when listening */}
+            {transcript && listening && (
+              <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20">
+                <p className="text-white text-base leading-relaxed text-center">
+                  {transcript}
+                </p>
+              </div>
+            )}
+
+            {/* Processing indicator */}
+            {isProcessing && !isSpeaking && !listening && (
+              <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex gap-1.5">
+                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                  <span className="text-white/80 text-sm">Thinking...</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Controls */}
+          <div className="w-full max-w-md">
+            {/* Audio Visualizer Line - only show when active */}
+            {(listening || isSpeaking) && (
+              <div className="flex items-center justify-center gap-1 mb-6 h-12">
+                {[...Array(30)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-1 bg-white/30 rounded-full transition-all"
+                    style={{
+                      height: `${20 + Math.sin((Date.now() / 100) + i) * 15}px`,
+                      animation: `wave 0.8s ease-in-out infinite`,
+                      animationDelay: `${i * 0.05}s`
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-center gap-6">
+              {/* Reset Button - only show when listening */}
+              {listening && (
+                <button
+                  onClick={() => {
+                    resetTranscript();
+                    resetSpeechTranscript();
+                  }}
+                  className="p-4 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-all active:scale-95"
+                  title="Reset transcript"
+                >
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Mic Button - Center */}
+              <button
+                onClick={handleVoiceToggle}
+                disabled={isProcessing}
+                className={cn(
+                  "relative p-8 rounded-full transition-all shadow-2xl disabled:opacity-50",
+                  listening
+                    ? "bg-gradient-to-br from-red-600 to-pink-600 hover:scale-105 active:scale-95"
+                    : "bg-gradient-to-br from-purple-600 to-pink-600 hover:scale-105 active:scale-95"
+                )}
+              >
+                {/* Pulsing rings - only when listening */}
+                {listening && (
+                  <>
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-600 to-pink-600 opacity-30 animate-ping"></div>
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-600 to-pink-600 opacity-20 animate-pulse"></div>
+                  </>
+                )}
+
+                <svg className="w-8 h-8 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+              </button>
+
+              {/* Stop Speaking Button - show when AI is speaking */}
+              {isSpeaking && (
+                <button
+                  onClick={handleStopSpeaking}
+                  className="p-4 rounded-2xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 backdrop-blur-sm transition-all active:scale-95"
+                  title="Stop AI"
+                >
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 6h12v12H6z"/>
+                  </svg>
+                </button>
               )}
             </div>
+
+            {/* Helper text */}
+            <p className="text-white/40 text-xs text-center mt-4">
+              {listening
+                ? "Tap mic to send message"
+                : isSpeaking
+                ? "AI is responding..."
+                : "Tap mic to start speaking"}
+            </p>
           </div>
         </div>
       )}
 
-      {/* Chat area */}
-      <div className="flex-1 overflow-hidden">
-        <ChatContainer messages={messages} />
-      </div>
-
-      {/* Input area */}
-      <div className="border-t bg-white/80 backdrop-blur-md">
-        <div className="container mx-auto p-4 max-w-4xl">
-          {/* Emotion History */}
-          {emotionHistory.length > 0 && (
-            <div className="mb-4">
-              <EmotionHistory emotions={emotionHistory} />
-            </div>
-          )}
-
-          {/* Audio visualizer (when listening) */}
-          {isListening && (
-            <div className="mb-4">
-              <AudioVisualizer isActive={isListening} />
-            </div>
-          )}
-
-          {/* Transcript display */}
-          {transcript && (
-            <div className="mb-4 p-4 bg-gradient-to-r from-primary-50 to-accent-50 rounded-xl border border-primary-200 animate-slide-up">
-              <p className="text-xs font-medium text-gray-600 mb-1">
-                Anda mengatakan:
-              </p>
-              <p className="text-gray-900">{transcript}</p>
-            </div>
-          )}
-
+      {/* Input area - Fixed at bottom */}
+      <div className="border-t border-gray-800 bg-surface-dark">
+        <div className="container mx-auto px-4 py-3 max-w-4xl safe-area-bottom">
           {/* Unified Input */}
           <UnifiedInput
             onSendText={handleSendMessage}
@@ -641,14 +991,12 @@ export default function ChatPage() {
             isListening={isListening}
             isProcessing={isProcessing}
             isSpeaking={isSpeaking}
-            voiceDisabled={!browserSupportsSpeechRecognition}
+            voiceDisabled={!isSpeechSupported}
             placeholder="Ketik pesan atau gunakan voice/upload gambar..."
           />
         </div>
       </div>
 
-      {/* Emergency button */}
-      <EmergencyButton />
 
       {/* Speaking indicator */}
       <SpeakingIndicator isSpeaking={isSpeaking} onStop={handleStopSpeaking} />

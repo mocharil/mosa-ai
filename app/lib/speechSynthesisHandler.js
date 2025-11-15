@@ -6,6 +6,62 @@
 import AudioAnalyzer from './audioAnalyzer';
 
 /**
+ * Clean markdown formatting from text for speech
+ * Removes *, **, #, and other markdown symbols
+ * @param {string} text - Text with markdown formatting
+ * @returns {string} Clean text for speech
+ */
+export function cleanTextForSpeech(text) {
+  if (!text) return '';
+
+  let cleanedText = text;
+
+  // Remove bold markers (**text** or __text__)
+  cleanedText = cleanedText.replace(/\*\*(.+?)\*\*/g, '$1');
+  cleanedText = cleanedText.replace(/__(.+?)__/g, '$1');
+
+  // Remove italic markers (*text* or _text_)
+  cleanedText = cleanedText.replace(/\*(.+?)\*/g, '$1');
+  cleanedText = cleanedText.replace(/_(.+?)_/g, '$1');
+
+  // Remove strikethrough (~~text~~)
+  cleanedText = cleanedText.replace(/~~(.+?)~~/g, '$1');
+
+  // Remove headers (# ## ### etc)
+  cleanedText = cleanedText.replace(/^#{1,6}\s+/gm, '');
+
+  // Remove list markers (*, -, +, 1., 2., etc)
+  cleanedText = cleanedText.replace(/^\s*[\*\-\+]\s+/gm, '');
+  cleanedText = cleanedText.replace(/^\s*\d+\.\s+/gm, '');
+
+  // Remove code blocks (```code```)
+  cleanedText = cleanedText.replace(/```[\s\S]*?```/g, '');
+
+  // Remove inline code (`code`)
+  cleanedText = cleanedText.replace(/`(.+?)`/g, '$1');
+
+  // Remove links [text](url) - keep only text
+  cleanedText = cleanedText.replace(/\[(.+?)\]\(.+?\)/g, '$1');
+
+  // Remove horizontal rules (---, ***, ___)
+  cleanedText = cleanedText.replace(/^[\-\*\_]{3,}\s*$/gm, '');
+
+  // Remove blockquotes (> text)
+  cleanedText = cleanedText.replace(/^\s*>\s+/gm, '');
+
+  // Clean up multiple spaces
+  cleanedText = cleanedText.replace(/\s+/g, ' ');
+
+  // Clean up multiple newlines
+  cleanedText = cleanedText.replace(/\n{3,}/g, '\n\n');
+
+  // Trim
+  cleanedText = cleanedText.trim();
+
+  return cleanedText;
+}
+
+/**
  * Get available Indonesian voices
  * @returns {SpeechSynthesisVoice[]} Array of Indonesian voices
  */
@@ -83,8 +139,14 @@ export async function speakWithAnimation(text, options = {}) {
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
 
-    // Create utterance
-    const utterance = new SpeechSynthesisUtterance(text);
+    // Clean text from markdown formatting before speaking
+    const cleanedText = cleanTextForSpeech(text);
+
+    console.log('🗣️ Original text:', text.substring(0, 100));
+    console.log('✨ Cleaned text:', cleanedText.substring(0, 100));
+
+    // Create utterance with cleaned text
+    const utterance = new SpeechSynthesisUtterance(cleanedText);
     utterance.lang = lang;
     utterance.rate = rate;
     utterance.pitch = pitch;

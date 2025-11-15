@@ -8,6 +8,65 @@ interface ConversationSummaryProps {
   onClose: () => void;
 }
 
+/**
+ * Convert markdown text to formatted React elements
+ * Handles: ** for bold, * for bullet points
+ */
+function renderMarkdown(text: string) {
+  const lines = text.split('\n');
+  const elements: JSX.Element[] = [];
+
+  lines.forEach((line, index) => {
+    // Skip empty lines
+    if (!line.trim()) {
+      elements.push(<br key={`br-${index}`} />);
+      return;
+    }
+
+    // Check if line starts with bullet point (*)
+    const bulletMatch = line.match(/^\s*\*\s+(.+)$/);
+    if (bulletMatch) {
+      const content = bulletMatch[1];
+
+      // Process bold text (**text**)
+      const parts = content.split(/(\*\*[^*]+\*\*)/g);
+      const renderedContent = parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          // Remove ** and make bold
+          return <strong key={i}>{part.slice(2, -2)}</strong>;
+        }
+        return <span key={i}>{part}</span>;
+      });
+
+      elements.push(
+        <li key={index} className="ml-4 mb-2">
+          {renderedContent}
+        </li>
+      );
+      return;
+    }
+
+    // Regular line (not a bullet point)
+    // Process bold text (**text**)
+    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+    const renderedContent = parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        // Remove ** and make bold
+        return <strong key={i}>{part.slice(2, -2)}</strong>;
+      }
+      return <span key={i}>{part}</span>;
+    });
+
+    elements.push(
+      <p key={index} className="mb-2">
+        {renderedContent}
+      </p>
+    );
+  });
+
+  return elements;
+}
+
 export default function ConversationSummary({
   summary,
   onClose,
@@ -59,8 +118,8 @@ export default function ConversationSummary({
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[50vh]">
           <div className="prose prose-sm max-w-none">
-            <div className="whitespace-pre-wrap leading-relaxed text-gray-700">
-              {summary}
+            <div className="leading-relaxed text-gray-700">
+              {renderMarkdown(summary)}
             </div>
           </div>
         </div>

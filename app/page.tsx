@@ -1,301 +1,302 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Sparkles, Heart, Shield, Mic, FileCheck, Zap, ArrowRight, User } from "lucide-react";
+import {
+  Bell,
+  CreditCard,
+  Building2,
+  FileText,
+  MapPin,
+  Calendar,
+  Heart,
+  Phone,
+  Shield,
+  MessageCircle,
+  ChevronRight,
+  User
+} from "lucide-react";
+import ChatbotFloatingButton from "./components/ChatbotFloatingButton";
+import Image from "next/image";
 
 export default function HomePage() {
   const router = useRouter();
 
-  const handleStart = () => {
-    router.push("/chat");
-  };
+  const mainFeatures = [
+    {
+      icon: <CreditCard className="h-7 w-7" />,
+      title: "e-Card JKN",
+      subtitle: "Kartu Digital",
+      gradient: "from-blue-500 to-blue-600",
+      onClick: () => router.push("/chat")
+    },
+    {
+      icon: <Building2 className="h-7 w-7" />,
+      title: "Faskes",
+      subtitle: "Cari Faskes",
+      gradient: "from-primary-500 to-primary-600",
+      onClick: () => router.push("/chat")
+    },
+    {
+      icon: <FileText className="h-7 w-7" />,
+      title: "Rujukan",
+      subtitle: "Info Rujukan",
+      gradient: "from-purple-500 to-purple-600",
+      onClick: () => router.push("/chat")
+    },
+    {
+      icon: <Calendar className="h-7 w-7" />,
+      title: "Riwayat",
+      subtitle: "Pelayanan",
+      gradient: "from-orange-500 to-orange-600",
+      onClick: () => router.push("/chat")
+    },
+  ];
 
-  const features = [
-    {
-      icon: <User className="h-6 w-6" />,
-      title: "Avatar Animasi dengan Lipsync",
-      description: "Avatar yang bicara dengan mulut bergerak, mata berkedip, dan ekspresi natural",
-      gradient: "from-purple-500 to-pink-500",
-    },
-    {
-      icon: <Mic className="h-6 w-6" />,
-      title: "Percakapan Suara 2 Arah",
-      description: "Bicara dan dengarkan jawaban AI dengan suara - seperti mengobrol dengan teman",
-      gradient: "from-blue-500 to-cyan-500",
-    },
+  const quickAccess = [
     {
       icon: <Heart className="h-6 w-6" />,
-      title: "Dukungan Emosional",
-      description: "Ruang aman untuk berbagi cerita dengan respons empatik dan profesional",
-      gradient: "from-pink-500 to-rose-500",
+      title: "Panduan Sehat",
+      description: "Tips kesehatan harian",
+      color: "text-red-600",
+      bg: "bg-red-50",
+      onClick: () => router.push("/chat")
     },
     {
-      icon: <FileCheck className="h-6 w-6" />,
-      title: "Informasi JKN Akurat",
-      description: "Jawaban lengkap dengan sitasi sumber resmi dari peraturan BPJS",
-      gradient: "from-purple-500 to-indigo-500",
+      icon: <Phone className="h-6 w-6" />,
+      title: "Layanan Care Center",
+      description: "1500-400",
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+      onClick: () => router.push("/chat")
     },
     {
       icon: <Shield className="h-6 w-6" />,
-      title: "Privasi Terjamin",
-      description: "Data percakapan aman, tidak disimpan tanpa persetujuan Anda",
-      gradient: "from-green-500 to-emerald-500",
+      title: "Informasi Iuran",
+      description: "Cek & bayar iuran",
+      color: "text-green-600",
+      bg: "bg-green-50",
+      onClick: () => router.push("/chat")
     },
     {
-      icon: <Zap className="h-6 w-6" />,
-      title: "Respons Cepat",
-      description: "AI modern yang memahami konteks dan memberikan jawaban instant",
-      gradient: "from-yellow-500 to-orange-500",
+      icon: <MessageCircle className="h-6 w-6" />,
+      title: "Chat Mosa",
+      description: "Asisten virtual AI",
+      color: "text-purple-600",
+      bg: "bg-purple-50",
+      onClick: () => router.push("/chat")
+    },
+  ];
+
+  const bannerSlides = [
+    {
+      title: "Tanya MOSA!",
+      subtitle: "Asisten Virtual AI untuk Informasi JKN & Dukungan Emosional",
+      gradient: "from-primary-600 to-primary-500",
+      action: "Chat Sekarang",
+      onClick: () => router.push("/chat")
     },
     {
-      icon: <Sparkles className="h-6 w-6" />,
-      title: "Unified Experience",
-      description: "Tanya JKN dan curhat dalam satu tempat, switch topik dengan mudah",
-      gradient: "from-violet-500 to-purple-500",
+      title: "Kesehatan Mental Anda Penting",
+      subtitle: "Ruang aman untuk curhat dan mendapat dukungan profesional",
+      gradient: "from-purple-600 to-pink-500",
+      action: "Mulai Curhat",
+      onClick: () => router.push("/chat")
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg">
-              <Sparkles className="h-6 w-6 text-white" />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header - JKN Style with Green Background */}
+      <header className="bg-gradient-to-r from-primary-600 to-primary-500 shadow-md">
+        <div className="container mx-auto px-4 py-4">
+          {/* Top Bar */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center shadow">
+                <User className="h-6 w-6 text-primary-600" />
+              </div>
+              <div>
+                <p className="text-xs text-primary-100">Selamat Datang,</p>
+                <p className="text-sm font-semibold text-white">Peserta JKN</p>
+              </div>
+            </div>
+
+            {/* Notification Bell - Chat Button Location */}
+            <button
+              onClick={() => router.push("/chat")}
+              className="relative p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+            >
+              <Bell className="h-6 w-6 text-white" />
+              {/* Notification Dot */}
+              <div className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 border border-white"></div>
+            </button>
+          </div>
+
+          {/* Logo & Title */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-14 w-14 rounded-xl bg-white flex items-center justify-center shadow-lg p-1.5">
+              <Image
+                src="/mosa_logo-removebg-preview.png"
+                alt="MOSA Logo"
+                width={56}
+                height={56}
+                className="object-contain"
+                priority
+              />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Voice JKN Agent</h1>
-              <p className="text-xs text-gray-600">Asisten Kesehatan AI</p>
+              <h1 className="text-2xl font-bold text-white">MOSA</h1>
+              <p className="text-xs text-primary-100">Healthcare voice assistant with safe talk</p>
             </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Ask MOSA anything about healthcare..."
+              onClick={() => router.push("/chat")}
+              readOnly
+              className="w-full px-4 py-3 pr-10 rounded-lg bg-white/95 backdrop-blur text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white shadow-sm cursor-pointer transition-all hover:shadow-md"
+            />
+            <MessageCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-primary-600" />
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16 lg:py-24">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-100 text-primary-700 text-sm font-medium mb-6 animate-fade-in">
-            <Sparkles className="h-4 w-4" />
-            <span>Powered by Google Gemini AI</span>
-          </div>
-
-          {/* Main Heading */}
-          <h2 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-            Asisten Kesehatan{" "}
-            <span className="bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent">
-              Untuk Anda
-            </span>
-          </h2>
-
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Tanyakan apapun tentang layanan JKN atau berbagi cerita Anda.
-            Kami siap membantu dengan informasi akurat dan dukungan emosional.
-          </p>
-
-          {/* CTA Button */}
-          <button
-            onClick={handleStart}
-            className="group inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+      {/* Content */}
+      <div className="container mx-auto px-4 pb-20">
+        {/* Banner Carousel - MOSA Promo */}
+        <div className="mt-4 mb-6">
+          <div
+            onClick={bannerSlides[0].onClick}
+            className={`relative overflow-hidden rounded-2xl shadow-lg cursor-pointer transform transition-transform hover:scale-[1.02]`}
           >
-            <Mic className="h-6 w-6" />
-            <span>Mulai Percakapan</span>
-            <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-          </button>
-
-          <p className="text-sm text-gray-500 mt-4">
-            Gratis • Tanpa Login • Privasi Terjamin
-          </p>
+            <div className={`bg-gradient-to-r ${bannerSlides[0].gradient} p-6 text-white relative overflow-hidden`}>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -ml-12 -mb-12"></div>
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageCircle className="h-6 w-6" />
+                    <span className="text-xs font-semibold bg-white/20 px-2 py-1 rounded-full">AI POWERED</span>
+                  </div>
+                  <h3 className="text-xl font-bold mb-1">{bannerSlides[0].title}</h3>
+                  <p className="text-sm text-white/90 mb-3">{bannerSlides[0].subtitle}</p>
+                  <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-primary-600 rounded-xl font-semibold text-sm hover:bg-white/90 transition-all hover:shadow-lg hover:scale-[1.02]">
+                    {bannerSlides[0].action}
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="hidden sm:block">
+                  <div className="h-24 w-24 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm">
+                    <Heart className="h-12 w-12 text-white animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Features Grid */}
-        <div className="max-w-6xl mx-auto mt-20">
-          <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Fitur Unggulan
-          </h3>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <div
+        {/* Main Features Grid - JKN Cards */}
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-3">Layanan Utama</h2>
+          <div className="grid grid-cols-4 gap-3">
+            {mainFeatures.map((feature, index) => (
+              <button
                 key={index}
-                className="group bg-white rounded-2xl p-6 shadow-soft hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-primary-200 animate-slide-up"
-                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={feature.onClick}
+                className="group bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all text-center"
               >
-                <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${feature.gradient} text-white mb-4 group-hover:scale-110 transition-transform`}>
+                <div className={`h-12 w-12 mx-auto mb-2 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow`}>
                   {feature.icon}
                 </div>
-                <h4 className="font-semibold text-lg text-gray-900 mb-2">
+                <p className="text-xs font-semibold text-gray-800 leading-tight mb-1">
                   {feature.title}
-                </h4>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  {feature.description}
                 </p>
-              </div>
+                <p className="text-[10px] text-gray-500">
+                  {feature.subtitle}
+                </p>
+              </button>
             ))}
           </div>
         </div>
 
-        {/* How It Works */}
-        <div className="max-w-4xl mx-auto mt-20">
-          <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Cara Menggunakan
-          </h3>
+        {/* Quick Access List */}
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-3">Akses Cepat</h2>
+          <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-100">
+            {quickAccess.map((item, index) => (
+              <button
+                key={index}
+                onClick={item.onClick}
+                className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className={`h-12 w-12 rounded-xl ${item.bg} flex items-center justify-center flex-shrink-0`}>
+                  <div className={item.color}>
+                    {item.icon}
+                  </div>
+                </div>
+                <div className="flex-1 text-left">
+                  <h3 className="font-semibold text-gray-800 text-sm">{item.title}</h3>
+                  <p className="text-xs text-gray-500">{item.description}</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-gray-400" />
+              </button>
+            ))}
+          </div>
+        </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-white text-2xl font-bold mb-4 shadow-lg">
-                1
+        {/* Info Card - Mental Health Support */}
+        <div className="mb-6">
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                <Heart className="h-6 w-6 text-white" />
               </div>
-              <h4 className="font-semibold text-lg mb-2">Tekan Mikrofon</h4>
-              <p className="text-gray-600 text-sm">
-                Klik tombol mikrofon besar di halaman chat
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-600 text-white text-2xl font-bold mb-4 shadow-lg">
-                2
+              <div className="flex-1">
+                <h3 className="font-bold text-purple-900 mb-1">Dukungan Kesehatan Mental</h3>
+                <p className="text-sm text-purple-700 mb-3">
+                  Butuh seseorang untuk diajak bicara? MOSA siap mendengarkan dan memberikan dukungan emosional.
+                </p>
+                <button
+                  onClick={() => router.push("/chat")}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Mulai Chat dengan MOSA
+                </button>
               </div>
-              <h4 className="font-semibold text-lg mb-2">Bicara dengan Jelas</h4>
-              <p className="text-gray-600 text-sm">
-                Tanyakan tentang JKN atau ceritakan perasaan Anda
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-purple-600 text-white text-2xl font-bold mb-4 shadow-lg">
-                3
-              </div>
-              <h4 className="font-semibold text-lg mb-2">Dapatkan Bantuan</h4>
-              <p className="text-gray-600 text-sm">
-                Terima jawaban akurat atau dukungan emosional
-              </p>
             </div>
           </div>
         </div>
 
-        {/* Use Cases */}
-        <div className="max-w-6xl mx-auto mt-20">
-          <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Apa yang Bisa Anda Tanyakan?
-          </h3>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-8 border border-primary-200">
-              <div className="flex items-center gap-3 mb-4">
-                <FileCheck className="h-8 w-8 text-primary-600" />
-                <h4 className="text-xl font-bold text-primary-900">Pertanyaan JKN</h4>
-              </div>
-              <ul className="space-y-3 text-primary-800">
-                <li className="flex items-start gap-2">
-                  <span className="text-primary-600 mt-1">•</span>
-                  <span>"Bagaimana cara mendaftar JKN?"</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary-600 mt-1">•</span>
-                  <span>"Berapa iuran JKN per bulan?"</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary-600 mt-1">•</span>
-                  <span>"Bagaimana prosedur rujukan?"</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary-600 mt-1">•</span>
-                  <span>"Saya sakit perut, harus ke poli apa?"</span>
-                </li>
-              </ul>
+        {/* Emergency Contacts */}
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-3">Kontak Darurat</h2>
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="grid grid-cols-2 gap-3">
+              <a href="tel:1500400" className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                <Phone className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-xs text-blue-600 font-medium">BPJS Care Center</p>
+                  <p className="text-sm font-bold text-blue-700">1500-400</p>
+                </div>
+              </a>
+              <a href="tel:119" className="flex items-center gap-3 p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                <Heart className="h-5 w-5 text-red-600" />
+                <div>
+                  <p className="text-xs text-red-600 font-medium">Kesehatan Jiwa</p>
+                  <p className="text-sm font-bold text-red-700">119 ext 8</p>
+                </div>
+              </a>
             </div>
-
-            <div className="bg-gradient-to-br from-accent-50 to-accent-100 rounded-2xl p-8 border border-accent-200">
-              <div className="flex items-center gap-3 mb-4">
-                <Heart className="h-8 w-8 text-accent-600" />
-                <h4 className="text-xl font-bold text-accent-900">Curhat & Dukungan</h4>
-              </div>
-              <ul className="space-y-3 text-accent-800">
-                <li className="flex items-start gap-2">
-                  <span className="text-accent-600 mt-1">•</span>
-                  <span>"Saya merasa stres dengan pekerjaan"</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-accent-600 mt-1">•</span>
-                  <span>"Saya cemas tentang kesehatan saya"</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-accent-600 mt-1">•</span>
-                  <span>"Saya butuh seseorang untuk diajak bicara"</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-accent-600 mt-1">•</span>
-                  <span>"Saya merasa sendirian"</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Final CTA */}
-        <div className="max-w-4xl mx-auto mt-20 text-center">
-          <div className="bg-gradient-to-br from-primary-600 to-accent-500 rounded-3xl p-12 shadow-2xl text-white">
-            <Sparkles className="h-12 w-12 mx-auto mb-4 animate-bounce-subtle" />
-            <h3 className="text-3xl font-bold mb-4">
-              Siap untuk Memulai?
-            </h3>
-            <p className="text-primary-100 mb-8 text-lg max-w-2xl mx-auto">
-              Tidak perlu daftar, tidak perlu login. Langsung bicara dan dapatkan bantuan yang Anda butuhkan.
-            </p>
-            <button
-              onClick={handleStart}
-              className="inline-flex items-center gap-3 px-8 py-4 bg-white text-primary-600 rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-            >
-              <Mic className="h-6 w-6" />
-              <span>Mulai Sekarang</span>
-              <ArrowRight className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Disclaimer */}
-        <div className="mt-16 max-w-3xl mx-auto">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-            <h4 className="font-semibold text-yellow-900 mb-2 flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Penting untuk Diketahui
-            </h4>
-            <ul className="text-sm text-yellow-800 space-y-1">
-              <li>• Layanan ini BUKAN pengganti konsultasi medis atau psikologis profesional</li>
-              <li>• Untuk kondisi darurat, segera hubungi 119 atau kunjungi fasilitas kesehatan terdekat</li>
-              <li>• Informasi yang diberikan bersifat umum dan edukatif</li>
-              <li>• Percakapan Anda aman dan tidak disimpan tanpa persetujuan</li>
-            </ul>
           </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 mt-20">
-        <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
-              <Sparkles className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xl font-bold">Voice JKN Agent</span>
-          </div>
-          <p className="text-gray-400 mb-4">
-            Asisten Kesehatan AI untuk informasi JKN dan dukungan emosional
-          </p>
-          <div className="flex justify-center gap-6 text-sm text-gray-400 mb-6">
-            <span>Hotline BPJS: 1500-400</span>
-            <span>•</span>
-            <span>Kesehatan Jiwa: 119 ext 8</span>
-            <span>•</span>
-            <span>Halo Kemkes: 1500-567</span>
-          </div>
-          <p className="text-xs text-gray-500">
-            &copy; 2025 Voice JKN Agent. Dibuat untuk membantu masyarakat Indonesia.
-          </p>
-        </div>
-      </footer>
+      {/* Floating Chatbot Button */}
+      <ChatbotFloatingButton />
     </div>
   );
 }

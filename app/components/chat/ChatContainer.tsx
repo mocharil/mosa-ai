@@ -3,18 +3,20 @@
 import { useEffect, useRef } from "react";
 import { Message } from "@/app/lib/gemini";
 import ChatBubble from "./ChatBubble";
+import ThinkingIndicator from "./ThinkingIndicator";
 import { Sparkles, Heart, FileCheck } from "lucide-react";
 
 interface ChatContainerProps {
   messages: Message[];
+  isProcessing?: boolean;
 }
 
-export default function ChatContainer({ messages }: ChatContainerProps) {
+export default function ChatContainer({ messages, isProcessing = false }: ChatContainerProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isProcessing]);
 
   if (messages.length === 0) {
     return (
@@ -61,8 +63,16 @@ export default function ChatContainer({ messages }: ChatContainerProps) {
   return (
     <div className="flex flex-col gap-4 p-4 overflow-y-auto h-full">
       {messages.map((message, index) => (
-        <ChatBubble key={index} message={message} />
+        <ChatBubble
+          key={index}
+          message={message}
+          isLatest={index === messages.length - 1 && message.role === "assistant"}
+        />
       ))}
+
+      {/* Show thinking indicator when processing */}
+      {isProcessing && <ThinkingIndicator />}
+
       <div ref={bottomRef} />
     </div>
   );

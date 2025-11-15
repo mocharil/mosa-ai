@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Mic, Image as ImageIcon, X, Loader2 } from 'lucide-react';
+import { Send, Mic, Image as ImageIcon, X, Loader2, Camera, Paperclip } from 'lucide-react';
 import { cn } from '@/app/lib/utils';
+import dynamic from 'next/dynamic';
+
+// Dynamically import CameraCapture (client-only component)
+const CameraCapture = dynamic(() => import('@/app/components/camera/CameraCapture'), {
+  ssr: false,
+});
 
 export default function UnifiedInput({
   onSendText,
@@ -17,8 +23,11 @@ export default function UnifiedInput({
   const [text, setText] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+  const attachMenuRef = useRef(null);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -28,9 +37,34 @@ export default function UnifiedInput({
     }
   }, [text]);
 
+  // Close attach menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (attachMenuRef.current && !attachMenuRef.current.contains(event.target)) {
+        setShowAttachMenu(false);
+      }
+    };
+
+    if (showAttachMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAttachMenu]);
+
   // Handle text submit
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // If there's a selected image, send it with caption
+    if (selectedImage) {
+      handleSendImage();
+      return;
+    }
+
+    // Otherwise send as text message
     if (text.trim() && !isProcessing) {
       onSendText(text);
       setText('');
@@ -75,11 +109,17 @@ export default function UnifiedInput({
   // Handle image send
   const handleSendImage = () => {
     if (selectedImage && !isProcessing) {
+      // Use text as caption if provided, otherwise empty string
+      const caption = text.trim() || '';
+
+      console.log('Sending image with caption:', caption || '(no caption)');
+
       onSendImage({
         image: selectedImage,
         previewUrl: previewUrl,
-        caption: text.trim() || 'Gambar diunggah'
+        caption: caption
       });
+
       // Clear after send
       setSelectedImage(null);
       setPreviewUrl(null);
@@ -99,11 +139,27 @@ export default function UnifiedInput({
     }
   };
 
+  // Handle camera capture
+  const handleCameraCapture = (imageData) => {
+    setSelectedImage(imageData.image);
+    setPreviewUrl(imageData.previewUrl);
+    setShowCamera(false);
+    setShowAttachMenu(false);
+  };
+
   return (
     <div className="space-y-3">
-      {/* Image Preview */}
+      {/* Camera Capture Modal */}
+      {showCamera && (
+        <CameraCapture
+          onCapture={handleCameraCapture}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
+
+      {/* Minimalist Image Preview */}
       {previewUrl && (
-        <div className="relative bg-gray-100 rounded-xl overflow-hidden animate-slide-up">
+        <div className="relative bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-xl rounded-2xl overflow-hidden animate-slide-up border border-white/10 shadow-2xl">
           <img
             src={previewUrl}
             alt="Preview"
@@ -115,52 +171,96 @@ export default function UnifiedInput({
             type="button"
             onClick={handleRemoveImage}
             disabled={isProcessing}
-            className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors disabled:opacity-50"
+            className="absolute top-3 right-3 p-2 bg-red-500/90 hover:bg-red-600 text-white rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95 disabled:opacity-50 backdrop-blur-sm"
           >
             <X className="w-4 h-4" />
           </button>
 
           {/* Image info */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-            <div className="flex items-center gap-2 text-white text-xs">
-              <ImageIcon className="w-3 h-3" />
-              <span className="truncate">{selectedImage.name}</span>
-              <span className="opacity-75">
-                ({(selectedImage.size / 1024).toFixed(0)} KB)
-              </span>
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 backdrop-blur-sm">
+            <div className="flex items-center justify-between gap-2 text-white text-xs">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="p-1.5 bg-white/10 rounded-lg">
+                  <ImageIcon className="w-3 h-3 shrink-0" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="truncate font-medium">{selectedImage.name}</div>
+                  <div className="text-[10px] text-gray-400">
+                    {(selectedImage.size / 1024).toFixed(0)} KB
+                  </div>
+                </div>
+              </div>
+              {text.trim() && (
+                <span className="bg-gradient-to-r from-primary-500 to-accent-500 px-2.5 py-1 rounded-lg text-[10px] font-medium shrink-0 shadow-lg">
+                  + Caption
+                </span>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Input Bar */}
-      <form onSubmit={selectedImage ? (e) => { e.preventDefault(); handleSendImage(); } : handleSubmit}>
-        <div className="flex items-end gap-2 bg-white rounded-2xl p-2 shadow-lg border border-gray-200">
+      {/* Minimalist Input Bar */}
+      <form onSubmit={handleSubmit}>
+        <div className="relative flex items-end gap-2 bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-xl rounded-2xl p-3 shadow-2xl border border-white/10">
           {/* Hidden file input */}
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            onChange={handleFileSelect}
+            onChange={(e) => {
+              handleFileSelect(e);
+              setShowAttachMenu(false);
+            }}
             disabled={isProcessing || isListening}
             className="hidden"
           />
 
-          {/* Image upload button */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isProcessing || isListening}
-            className={cn(
-              "p-2.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0",
-              selectedImage
-                ? "bg-purple-100 text-purple-600 hover:bg-purple-200"
-                : "hover:bg-gray-100 text-gray-600"
+          {/* Attachment button with popup menu */}
+          <div className="relative shrink-0" ref={attachMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowAttachMenu(!showAttachMenu)}
+              disabled={isProcessing || isListening}
+              className={cn(
+                "p-2.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed",
+                showAttachMenu || selectedImage
+                  ? "bg-primary-500/20 text-primary-400"
+                  : "hover:bg-white/10 text-gray-400"
+              )}
+              title="Attach file"
+            >
+              <Paperclip className="w-5 h-5" />
+            </button>
+
+            {/* Attachment popup menu */}
+            {showAttachMenu && (
+              <div className="absolute bottom-full left-0 mb-2 bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-xl shadow-2xl overflow-hidden animate-slide-up min-w-[160px]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCamera(true);
+                    setShowAttachMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors text-left"
+                >
+                  <Camera className="w-4 h-4 text-primary-400" />
+                  <span className="text-sm text-white">Camera</span>
+                </button>
+                <div className="h-px bg-white/10" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    fileInputRef.current?.click();
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors text-left"
+                >
+                  <ImageIcon className="w-4 h-4 text-accent-400" />
+                  <span className="text-sm text-white">Gallery</span>
+                </button>
+              </div>
             )}
-            title="Upload gambar"
-          >
-            <ImageIcon className="w-5 h-5" />
-          </button>
+          </div>
 
           {/* Text input */}
           <textarea
@@ -168,36 +268,58 @@ export default function UnifiedInput({
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder}
+            placeholder={selectedImage ? "Add caption (optional)..." : "Type a message..."}
             disabled={isProcessing}
             rows={1}
-            className="flex-1 resize-none outline-none bg-transparent px-2 py-2.5 text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed max-h-[120px] overflow-y-auto"
+            className="flex-1 resize-none outline-none bg-transparent px-2 py-2.5 text-white placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed max-h-[120px] overflow-y-auto"
           />
 
           {/* Voice button */}
           <button
             type="button"
             onClick={onVoiceToggle}
-            disabled={voiceDisabled || isProcessing}
+            disabled={voiceDisabled || isProcessing || selectedImage !== null}
             className={cn(
-              "p-2.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0",
+              "p-2.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0 relative",
               isListening
-                ? "bg-red-500 text-white hover:bg-red-600 animate-pulse"
+                ? "bg-red-500/90 text-white hover:bg-red-600 shadow-lg shadow-red-500/30"
                 : isSpeaking
-                ? "bg-orange-500 text-white hover:bg-orange-600"
-                : "bg-green-500 text-white hover:bg-green-600"
+                ? "bg-orange-500/90 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/30"
+                : "bg-gradient-to-br from-primary-500 to-accent-500 text-white hover:scale-105 shadow-lg shadow-primary-500/20"
             )}
-            title={isListening ? "Stop recording" : isSpeaking ? "AI sedang berbicara (klik untuk interrupt)" : "Mulai voice chat"}
+            title={
+              selectedImage
+                ? "Voice unavailable with images"
+                : isListening
+                ? "Stop & send"
+                : isSpeaking
+                ? "AI speaking (click to stop)"
+                : "Start voice input"
+            }
           >
             <Mic className="w-5 h-5" />
+            {isListening && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-red-500 animate-ping"></span>
+            )}
           </button>
 
           {/* Send button */}
           <button
             type="submit"
             disabled={(!text.trim() && !selectedImage) || isProcessing}
-            className="p-2.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg shrink-0"
-            title="Kirim"
+            className={cn(
+              "p-2.5 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed shrink-0",
+              (!text.trim() && !selectedImage) || isProcessing
+                ? "bg-gray-700 text-gray-500"
+                : "bg-gradient-to-br from-primary-500 to-accent-500 text-white hover:scale-105 shadow-lg shadow-primary-500/30 active:scale-95"
+            )}
+            title={
+              selectedImage && text.trim()
+                ? "Send image with caption"
+                : selectedImage
+                ? "Send image"
+                : "Send message"
+            }
           >
             {isProcessing ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -208,13 +330,9 @@ export default function UnifiedInput({
         </div>
       </form>
 
-      {/* Helper text */}
-      <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
-        <span>💬 Ketik pesan</span>
-        <span>•</span>
-        <span>🎤 Voice chat</span>
-        <span>•</span>
-        <span>🖼️ Upload gambar</span>
+      {/* Minimalist helper text */}
+      <div className="flex items-center justify-center gap-2 text-[10px] text-gray-600">
+        <span className="opacity-60">Voice · Attach · Type</span>
       </div>
     </div>
   );

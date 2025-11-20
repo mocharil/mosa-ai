@@ -134,8 +134,8 @@ Ekspor ringkasan percakapan untuk referensi:
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/yourusername/voice-jkn-agent.git
-cd voice-jkn-agent
+git clone https://github.com/yourusername/mosa-ai.git
+cd mosa-ai
 ```
 
 ### 2. Install Dependencies
@@ -189,7 +189,7 @@ Open [http://localhost:3000](http://localhost:3000) 🎉
 ## 📁 Project Structure
 
 ```
-voice-jkn-agent/
+mosa-ai/
 ├── app/
 │   ├── api/
 │   │   ├── chat/
@@ -313,7 +313,7 @@ const highRiskKeywords = [
 
 ### Deploy to Vercel (Recommended)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/voice-jkn-agent)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/mosa-ai)
 
 **Steps:**
 1. Push code ke GitHub
@@ -531,9 +531,9 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ### Get Help
 - 📖 [Documentation](./docs)
-- 💬 [GitHub Discussions](https://github.com/yourusername/voice-jkn-agent/discussions)
-- 🐛 [Report Bug](https://github.com/yourusername/voice-jkn-agent/issues)
-- 💡 [Request Feature](https://github.com/yourusername/voice-jkn-agent/issues)
+- 💬 [GitHub Discussions](https://github.com/yourusername/mosa-ai/discussions)
+- 🐛 [Report Bug](https://github.com/yourusername/mosa-ai/issues)
+- 💡 [Request Feature](https://github.com/yourusername/mosa-ai/issues)
 
 ### Social
 - 🐦 Twitter: [@yourusername](https://twitter.com/yourusername)
@@ -546,7 +546,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 If you find this project helpful, please consider giving it a star ⭐
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/voice-jkn-agent&type=Date)](https://star-history.com/#yourusername/voice-jkn-agent&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/mosa-ai&type=Date)](https://star-history.com/#yourusername/mosa-ai&Date)
 
 ---
 
@@ -556,7 +556,7 @@ If you find this project helpful, please consider giving it a star ⭐
 
 **Powered by Open-Source AI** 🤗
 
-[Website](https://mosa.vercel.app) • [Documentation](./docs) • [Report Bug](https://github.com/yourusername/voice-jkn-agent/issues)
+[Website](https://mosa.vercel.app) • [Documentation](./docs) • [Report Bug](https://github.com/yourusername/mosa-ai/issues)
 
 ---
 

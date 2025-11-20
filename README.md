@@ -536,9 +536,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - 💡 [Request Feature](https://github.com/yourusername/mosa-ai/issues)
 
 ### Social
-- 🐦 Twitter: [@yourusername](https://twitter.com/yourusername)
-- 💼 LinkedIn: [Your Name](https://linkedin.com/in/yourname)
-- 📧 Email: your.email@example.com
+- 💼 LinkedIn: [Moch Aril Indra Permana]([https://linkedin.com/in/yourname](https://www.linkedin.com/in/moch-aril-indra-permana-52887b138/))
+- 📧 Email: arilindra21@gmail.com
 
 ---
 

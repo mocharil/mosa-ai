@@ -1,6 +1,6 @@
 "use client";
 
-import { Message } from "@/app/lib/gemini";
+import { Message } from "@/app/lib/huggingface";
 import { cn } from "@/app/lib/utils";
 import { parseMarkdown } from "@/app/lib/markdown";
 import { Sparkles, User } from "lucide-react";
@@ -59,7 +59,7 @@ export default function ChatBubble({ message, isLatest = false }: ChatBubbleProp
           )}
 
           <div className={cn(
-            "text-sm leading-relaxed",
+            "text-xs leading-relaxed",
             isUser ? "text-white whitespace-pre-wrap" : ""
           )}>
             {isUser ? (
@@ -73,7 +73,7 @@ export default function ChatBubble({ message, isLatest = false }: ChatBubbleProp
         {/* Timestamp - Outside bubble */}
         <div
           className={cn(
-            "text-xs px-2 text-gray-500",
+            "text-[10px] px-2 text-gray-500",
             isUser ? "text-right" : "text-left"
           )}
         >

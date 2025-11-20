@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Message } from "@/app/lib/gemini";
+import { Message } from "@/app/lib/huggingface";
 import ChatBubble from "./ChatBubble";
 import ThinkingIndicator from "./ThinkingIndicator";
 import { Sparkles, Heart, FileCheck } from "lucide-react";

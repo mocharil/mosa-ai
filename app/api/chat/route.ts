@@ -4,7 +4,7 @@ import {
   Message,
   generateSummary,
   analyzeImage,
-} from "@/app/lib/vertexai";
+} from "@/app/lib/huggingface";
 
 export async function POST(request: NextRequest) {
   try {

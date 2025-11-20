@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Message } from "./gemini";
+import { Message } from "./huggingface";
 
 export type Language = "id-ID" | "en-US";
 

@@ -233,7 +233,7 @@ export default function ChatPage() {
 
         if (demoMode) {
           // DEMO MODE: Use mock responses
-          const demoResponse = getDemoResponse(text.trim());
+          const demoResponse = getDemoResponse(text.trim().toLowerCase());
           const delay = demoResponse?.delay || 1500;
 
           // Simulate network delay
@@ -242,7 +242,7 @@ export default function ChatPage() {
           responseText = demoResponse?.response || "Maaf, saya belum bisa memahami pertanyaan Anda. Coba tanyakan tentang rumah sakit, iuran JKN, atau ceritakan keluhan Anda.";
         } else {
           // REAL MODE: Use Gemini AI
-          const response = await fetch("/api/gemini", {
+          const response = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -368,7 +368,7 @@ export default function ChatPage() {
 
         console.log('Sending image with query:', imageQuery);
 
-        const response = await fetch("/api/gemini", {
+        const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -495,7 +495,7 @@ export default function ChatPage() {
         responseText = demoResponse?.response || "Maaf, saya belum bisa memahami pertanyaan Anda. Coba tanyakan tentang rumah sakit, iuran JKN, atau ceritakan keluhan Anda.";
       } else {
         // REAL MODE: Use Gemini AI
-        const response = await fetch("/api/gemini", {
+        const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -687,7 +687,7 @@ export default function ChatPage() {
 
     setIsProcessing(true);
     try {
-      const response = await fetch("/api/gemini", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -732,9 +732,16 @@ export default function ChatPage() {
             {/* Left: Back button + Logo */}
             <div className="flex items-center gap-3">
               <button
-                onClick={() => router.push("/")}
+                onClick={() => {
+                  // If in voice mode, exit voice mode instead of going home
+                  if (isVoiceMode) {
+                    handleBackFromVoice();
+                  } else {
+                    router.push("/");
+                  }
+                }}
                 className="p-2 hover:bg-white/5 rounded-xl transition-all duration-200 active:scale-95 group"
-                aria-label="Back to home"
+                aria-label={isVoiceMode ? "Exit voice mode" : "Back to home"}
               >
                 <ArrowLeft className="h-5 w-5 text-gray-300 group-hover:text-white transition-colors duration-200" />
               </button>
@@ -837,7 +844,7 @@ export default function ChatPage() {
 
       {/* Voice Mode Overlay - Modern Dark Design */}
       {isVoiceMode && (
-        <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 z-40 flex flex-col items-center justify-between p-8">
+        <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 z-[60] flex flex-col items-center justify-between p-8">
           {/* Animated Background Effects */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl animate-pulse"></div>

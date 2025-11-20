@@ -134,7 +134,7 @@ Ekspor ringkasan percakapan untuk referensi:
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/yourusername/mosa-ai.git
+git clone https://github.com/mocharil/mosa-ai.git
 cd mosa-ai
 ```
 
@@ -313,7 +313,7 @@ const highRiskKeywords = [
 
 ### Deploy to Vercel (Recommended)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/mosa-ai)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/mocharil/mosa-ai)
 
 **Steps:**
 1. Push code ke GitHub
@@ -516,7 +516,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 ## 👨‍💻 Authors & Acknowledgments
 
 ### Core Team
-- **Your Name** - Initial work - [@yourusername](https://github.com/yourusername)
+- **Your Name** - Initial work - [@mocharil](https://github.com/mocharil)
 
 ### Acknowledgments
 - [Hugging Face](https://huggingface.co) for amazing open-source models
@@ -531,9 +531,9 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ### Get Help
 - 📖 [Documentation](./docs)
-- 💬 [GitHub Discussions](https://github.com/yourusername/mosa-ai/discussions)
-- 🐛 [Report Bug](https://github.com/yourusername/mosa-ai/issues)
-- 💡 [Request Feature](https://github.com/yourusername/mosa-ai/issues)
+- 💬 [GitHub Discussions](https://github.com/mocharil/mosa-ai/discussions)
+- 🐛 [Report Bug](https://github.com/mocharil/mosa-ai/issues)
+- 💡 [Request Feature](https://github.com/mocharil/mosa-ai/issues)
 
 ### Social
 - 💼 LinkedIn: [Moch Aril Indra Permana]([https://linkedin.com/in/yourname](https://www.linkedin.com/in/moch-aril-indra-permana-52887b138/))
@@ -545,7 +545,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 If you find this project helpful, please consider giving it a star ⭐
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/mosa-ai&type=Date)](https://star-history.com/#yourusername/mosa-ai&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=mocharil/mosa-ai&type=Date)](https://star-history.com/#mocharil/mosa-ai&Date)
 
 ---
 
@@ -555,7 +555,7 @@ If you find this project helpful, please consider giving it a star ⭐
 
 **Powered by Open-Source AI** 🤗
 
-[Website](https://mosa.vercel.app) • [Documentation](./docs) • [Report Bug](https://github.com/yourusername/mosa-ai/issues)
+[Website](https://mosa.vercel.app) • [Documentation](./docs) • [Report Bug](https://github.com/mocharil/mosa-ai/issues)
 
 ---
 
